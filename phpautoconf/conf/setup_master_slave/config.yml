@@ -1,0 +1,31 @@
+source:
+  host: 127.0.0.1
+  port: 17050
+  user: root
+  password: msandbox
+  write_lock: true
+  backup_dir: /tmp
+  backup_file: backup.dmp
+
+master:
+  host: 127.0.0.1
+  port: 17050
+  user: root
+  password: msandbox
+
+slaves:
+  1:
+    host: 127.0.0.1
+    port: 17051
+    user: root
+    password: msandbox
+  2:
+    host: 127.0.0.1
+    port: 17052
+    user: root
+    password: msandbox
+
+repl_user:
+  user: repl
+  password: 123456
+  host: localhost

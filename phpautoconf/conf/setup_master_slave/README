@@ -1,0 +1,10 @@
+This config package intends to automate the start setup of a 
+1 master 2 slaves mysql configuration.
+
+For this example to run, I've installed 3 mysql instances into my machine
+using MySQL Sandbox, see: http://mysqlsandbox.net/
+
+To run it, just type: $PHPAUTOCONF_DIR/run setup_master_slave
+
+You must be sure that this config package is into the conf dir with the
+setup_master_slave name

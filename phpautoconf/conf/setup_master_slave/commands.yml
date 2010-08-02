@@ -1,0 +1,82 @@
+#
+# Commands must satisfy the following mask %[A-Za-z0-9._]+%
+# VERY IMPORTANT: DON'T INDENTATE WITH TABS, USE SPACES 
+#
+
+processes:
+  mysql_source: # mysql database from the dump will be extracted, could be the master
+    command: |
+      mysql --host=%source.host% --port=%source.port% -u %source.user% --password=%source.password%
+  mysql_master: # master mysql database 
+    command: |
+      mysql --host=%master.host% --port=%master.port% -u %master.user% --password=%master.password%
+  mysql_slave1: # slave1 mysql database
+    command: |
+      mysql --host=%slaves.1.host% --port=%slaves.1.port% -u %slaves.1.user% --password=%slaves.1.password%
+  mysql_slave2: # slave2 mysql database
+    command: |
+      mysql --host=%slaves.2.host% --port=%slaves.2.port% -u %slaves.2.user% --password=%slaves.2.password%
+
+tasks:
+  create_replication_user:
+    1: # creating and granting the replication user
+      type: process
+      process: mysql_master
+      command: |
+        GRANT REPLICATION SLAVE ON *.* TO '%repl_user.user%'@'%repl_user.host%' IDENTIFIED BY '%repl_user.password%'; 
+
+  create_dump:
+    1: # stablishing read lock on tables 
+      type: process
+      process: mysql_source
+      command: |
+        FLUSH TABLES WITH READ LOCK;
+    2: # showing the master status (output should be processed)
+      type: shell
+      command: |
+        mysql --host=%source.host% --port=%source.port% -u %source.user% --password=%source.password% \
+        -e "SHOW MASTER STATUS;"
+    3: # connecting to database and dumping it
+      type: shell
+      command: |
+        mysqldump --host=%source.host% --port=%source.port% --all-databases --lock-all-tables \
+        -u %source.user% --password=%source.password% > %source.backup_dir%/%source.backup_file%
+    4: # releasing the read lock on tables
+      type: process
+      process: mysql_source
+      command: |
+        UNLOCK TABLES;
+
+  restore_dump:
+    1: # restoring the dump on slave1
+      type: shell
+      command: |
+        mysql --host=%slaves.1.host% --port=%slaves.1.port% -u %slaves.1.user% --password=%slaves.1.password% < %source.backup_dir%/%source.backup_file%
+    2: # restoring the dump on slave2
+      type: shell
+      command: |
+        mysql --host=%slaves.2.host% --port=%slaves.2.port% -u %slaves.2.user% --password=%slaves.2.password% < %source.backup_dir%/%source.backup_file%
+
+  set_master:
+    1: # setting the master on slave1
+      type: process
+      process: mysql_slave1
+      command: |
+        CHANGE MASTER TO MASTER_HOST='%master.host%', MASTER_PORT=%master.port%, MASTER_USER='%master.user%', MASTER_PASSWORD='%master.password%', MASTER_LOG_FILE='?logFile?', MASTER_LOG_POS=?logPos?;
+    2: # setting the master on slave2
+      type: process
+      process: mysql_slave2
+      command: |
+        CHANGE MASTER TO MASTER_HOST='%master.host%', MASTER_PORT=%master.port%, MASTER_USER='%master.user%', MASTER_PASSWORD='%master.password%', MASTER_LOG_FILE='?logFile?', MASTER_LOG_POS=?logPos?;
+  
+  start_slave:
+    1: # starting slave on slave1
+      type: process
+      process: mysql_slave1
+      command: |
+        START SLAVE;
+    2: # starting slave on slave2
+      type: process
+      process: mysql_slave2
+      command: |
+        START SLAVE;

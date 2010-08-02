@@ -1,0 +1,87 @@
+Install
+=======
+
+* You must have installed php5-cli, php5-dev and php-pear.
+* Place the phpautoconf dir wherever you want, many people locate it at /opt
+
+
+Usage
+=====
+
+Locate your config packages into the conf directory. Is very important the name of the 
+directory (of your config package) because it will be used by the run script
+
+Example: ./run setup_master_slave
+
+The above example will run setup_master_slave config from the main.php file located at
+conf/setup_master_slave. 
+
+IMPORTANT: Remember that each config package must have a command.yml and config.tml file
+
+
+Writing config packages
+======================
+
+Write your own config package is very easy. A package has three components:
+* config.yml - Contains all variables that should be used in the commands.yml file 
+* commands.yml - Contains all config package tasks
+* main.php - Execute the tasks
+
+config.yml
+----------
+ 
+Contains variables that will be replaced into te commands.yml file. This variables are
+constructed as follows:
+first:
+  second:
+    third: Hello
+    
+Then, then into the commands.yml file you can include something like:
+
+echo  %first.second.third.% . ", Rodolfo" => Hello, Rodolfo
+
+As you can see, each key is expressed using context YAML standard into config.yml. Then,
+for each variable separated by a dot (dots allows to denote contexts), between percents (%) 
+found at commands.yml, phpautoconf will setup and replace with its values
+
+comands.yml
+-----------
+ 
+A config package is composed of tasks, each task is composed of actions, 
+and each action is composed of commands. 
+
+An action could be of two types, shell or process. A shell action executes a command 
+in a shell (Ex. ls -l). A process action executes a command into a previously opened
+process.
+
+The processes that will be opened for a config package sould be specified at the begining
+of the file. Processes are closed when the finalized method is called.
+
+main.php
+--------
+
+Allows to run the config package. Sould begin with a $script->init() and end with a 
+$script->finalize(), load and close processes
+
+The $script variable allows you to execute tasks, using method execute. An example:
+
+$params['logFile'] = $rows[0];
+$params['logPos'] = $rows[1];
+$script->execute('restore_dump', $output, $return, $params);
+
+The above example executes restore_dump task, putting its output and return status into
+the $output and $return variables. You can also pass an array of named parameters to the
+task, that will be included into the command where the variables between question marks (?)
+were found. 
+
+IMPORTANT: 
+* In the setup_master_slave config package inluded as an example you could find useful 
+information.
+* Remember commands.yml and config.yml files follows YAML specification, 
+see http://www.yaml.org/
+
+
+Contact
+=======
+
+For any suggestion or comment mail camposer at gmail dot com
