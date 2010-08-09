@@ -16,16 +16,16 @@
     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-require_once($baseDir . '/lib/fabpot-yaml/lib/sfYamlParser.php');
-require_once($baseDir . '/lib/util/CommandUtil.class.php');
-require_once($baseDir . '/lib/util/YmlUtil.class.php');
-require_once($baseDir . '/lib/util/ScriptUtil.class.php');
+require_once($baseDir . '/../lib/fabpot-yaml/lib/sfYamlParser.php');
+require_once($baseDir . '/../lib/util/CommandUtil.class.php');
+require_once($baseDir . '/../lib/util/YmlUtil.class.php');
+require_once($baseDir . '/../lib/util/ScriptUtil.class.php');
 
 /************ Loading configuration ************/
 
 //echo dirname($argv[0]);
-$config = YmlUtil::load($baseDir . "/conf/$confName/config.yml");
-$commands = YmlUtil::load($baseDir . "/conf/$confName/commands.yml");
+$config = YmlUtil::load($conf);
+$commands = YmlUtil::load($cmd);
 
 if ( !$config || !$commands ) {
 	echo "You must have a config.yml and command.yml into your configuration\n";

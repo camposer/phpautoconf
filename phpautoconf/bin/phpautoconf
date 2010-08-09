@@ -1,0 +1,60 @@
+#!/usr/bin/php
+<?php
+/* 
+    This file is part of phpautoconf.
+
+    phpautoconf is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    phpautoconf is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+// global variables
+$conf = null; // config file
+$cmd = null; // cmd file
+$main = null; // main file
+$baseDir = dirname(__FILE__); // phpautoconf basedir
+
+if (!isset($argv[1]) || !$argv[1]) {
+	printUsage();
+} else {
+	foreach($argv as $arg) {
+		if (strpos($arg, "-conf") !== false) {
+			$values = split("=", $arg);
+			$conf = $values[1];
+		} else if (strpos($arg, "-cmd") !== false) {
+			$values = split("=", $arg);
+			$cmd = $values[1];
+		} else if (strpos($arg, "-yml_dir") !== false) {
+			$values = split("=", $arg);
+			$conf = $values[1] . "/config.yml";
+			$cmd = $values[1] . "/commands.yml";
+		} else if (strpos($arg, "-") === false)  {
+			if ($conf && $cmd)
+				$main = $arg;
+		}
+	}
+
+	if ($conf && $cmd && $main) {
+		require_once($baseDir . '/../lib/autoload/init.php');
+		require_once($main);
+		require_once($baseDir . '/../lib/autoload/finalize.php');
+	} else {
+		printUsage();
+	}
+
+}
+
+function printUsage() {
+	echo "Usage: phpautoconf -conf=file -cmd=file config_main\n";
+	echo "Usage: phpautoconf -yml_dir=file config_main\n";
+}
+?>
