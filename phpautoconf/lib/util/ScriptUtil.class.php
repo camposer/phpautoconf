@@ -19,10 +19,11 @@
 class ScriptUtil {
 	const TYPE_SHELL = 'shell';
 	const TYPE_PROCESS = 'process';
+	const READ_TIMEOUT = 2; // read timeout after a write
 	private $commands;
 	private $processes;
 	private $pipes;
-	
+
 	function __construct($commands) {
 		$this->commands = $commands;
 	}
@@ -41,9 +42,11 @@ class ScriptUtil {
 			       1 => array("pipe", "w"),  // stdout
 			       2 => array("pipe", "w")   // stderr
 			); // descriptorspec
+
 			
 			foreach($configProcesses as $process => $config) {
-				$this->processes[$process] = proc_open($config['command'], $ds, $this->pipes[$process]);
+				$this->processes[$process] = proc_open($config['command'], $ds, $this->pipes[$process], '/tmp');
+				stream_set_blocking($this->pipes[$process][1], FALSE); // configures stdin pipe to be non-blocking
 				echo "Opened: $process\n";				
 			}
 
@@ -54,6 +57,9 @@ class ScriptUtil {
 	public function finalize() {
 		if ($this->processes) {
 			foreach($this->processes as $process => $value) {
+				fclose($this->pipes[$process][0]);
+				fclose($this->pipes[$process][1]);
+				fclose($this->pipes[$process][2]);
 				proc_close($value);
 				echo "Closed: $process\n";
 			}
@@ -85,14 +91,15 @@ class ScriptUtil {
 					$pipe = $this->pipes[$process];
 
 					fwrite($pipe[0], $command); // sending input and getting status
+					fwrite($pipe[0], "\n"); 
+//					fflush($pipe[0]);
+
+					stream_select($read = array($pipe[1]), $write = null, $except = null, self::READ_TIMEOUT);
+					$output = fgets($pipe[1]); //getting output
+
 					$status = proc_get_status($this->processes[$process]);
 					$return = $status['exitcode'];
 					
-					//fflush($pipe[0]);
-					//fclose($pipe[0]);
-					
-					//$output = stream_get_contents($pipe[1]); // getting output
-					//fclose($pipe[1]);					
 				} else if ($action['type'] == self::TYPE_SHELL) {
 					exec($command, $output, $return);
 				}
@@ -101,7 +108,7 @@ class ScriptUtil {
 				if ($process)
 					$process.=': ';
 
-				echo "[$return] $process" . $command . "\n";
+				echo "[$return $output] $process" . $command . "\n";
 			}
 		}
 	}

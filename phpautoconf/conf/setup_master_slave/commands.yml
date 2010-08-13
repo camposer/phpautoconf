@@ -32,10 +32,13 @@ tasks:
       command: |
         FLUSH TABLES WITH READ LOCK;
     2: # showing the master status (output should be processed)
-      type: shell
+      type: process
+      process: mysql_source
       command: |
-        mysql --host=%source.host% --port=%source.port% -u %source.user% --password=%source.password% \
-        -e "SHOW MASTER STATUS;"
+        INSERT INTO test.a VALUES(22);
+#      command: |
+#        mysql --host=%source.host% --port=%source.port% -u %source.user% --password=%source.password% \
+#        -e "SHOW MASTER STATUS;"
     3: # connecting to database and dumping it
       type: shell
       command: |
